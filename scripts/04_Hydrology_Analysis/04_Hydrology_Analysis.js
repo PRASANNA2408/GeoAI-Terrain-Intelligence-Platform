@@ -561,3 +561,112 @@ print(
   'Hydrological Wetness Index Statistics:',
   hwiStats
 );
+// ======================================================
+// STEP 11: HYDROLOGICAL FEATURE STACK
+// Purpose: Prepare landslide-relevant hydrological
+//          predictors for the future ML dataset
+// ======================================================
+
+// Rename hydrological predictors clearly
+
+var twiFeature = twi.rename('TWI');
+
+var distanceFeature = distanceToStream
+  .rename('Distance_to_Stream');
+
+var drainageFeature = drainageDensity
+  .rename('Drainage_Density');
+
+var handFeature = hand
+  .rename('HAND');
+
+// Combine selected hydrological predictors
+
+var hydrologyFeatureStack = ee.Image.cat([
+  twiFeature,
+  distanceFeature,
+  drainageFeature,
+  handFeature
+]).clip(nilgiris);
+
+// Print feature stack information
+
+print(
+  'Hydrological Feature Stack:',
+  hydrologyFeatureStack
+);
+
+print(
+  'Hydrological Feature Bands:',
+  hydrologyFeatureStack.bandNames()
+);
+
+// Display individual predictors for verification
+
+Map.addLayer(
+  hydrologyFeatureStack.select('TWI'),
+  {
+    min: -6,
+    max: 14,
+    palette: [
+      '8c510a',
+      'd8b365',
+      'f6e8c3',
+      'c7eae5',
+      '5ab4ac',
+      '01665e'
+    ]
+  },
+  'ML Feature - TWI',
+  false
+);
+
+Map.addLayer(
+  hydrologyFeatureStack.select('Distance_to_Stream'),
+  {
+    min: 0,
+    max: 5000,
+    palette: [
+      '0000FF',
+      '00FFFF',
+      '00FF00',
+      'FFFF00',
+      'FF0000'
+    ]
+  },
+  'ML Feature - Distance to Stream',
+  false
+);
+
+Map.addLayer(
+  hydrologyFeatureStack.select('Drainage_Density'),
+  {
+    min: 0,
+    max: 0.01,
+    palette: [
+      'FFFFFF',
+      'FFFF00',
+      'FFA500',
+      'FF0000'
+    ]
+  },
+  'ML Feature - Drainage Density',
+  false
+);
+
+Map.addLayer(
+  hydrologyFeatureStack.select('HAND'),
+  {
+    min: 0,
+    max: 200,
+    palette: [
+      '0000FF',
+      '00FFFF',
+      '00FF00',
+      'FFFF00',
+      'FF0000'
+    ]
+  },
+  'ML Feature - HAND',
+  false
+);
