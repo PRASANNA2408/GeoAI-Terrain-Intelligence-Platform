@@ -1,7 +1,7 @@
 // ======================================================
 // Project : GeoAI Terrain Intelligence Platform
-// Module  : Hydrology Analysis
-// Script  : 04_Hydrology_Analysis
+// Module  : Terrain Analysis
+// Script  : 03_Terrain_Analysis
 // Author  : Prasanna Venkataramanan
 // ======================================================
 
@@ -22,20 +22,27 @@ var nilgiris = districts.filter(
 // Load DEM
 // ------------------------------------------------------
 
-var dem = ee.ImageCollection("COPERNICUS/DEM/GLO30")
+// Load DEM without clipping first.
+// Terrain derivatives need neighboring pixels.
+var demRaw = ee.ImageCollection("COPERNICUS/DEM/GLO30")
   .select('DEM')
-  .mosaic()
-  .clip(nilgiris);
+  .mosaic();
+
+// Clip DEM only after loading
+var dem = demRaw.clip(nilgiris);
+
 
 // ------------------------------------------------------
 // Generate Terrain Layers
 // ------------------------------------------------------
 
-var terrain = ee.Algorithms.Terrain(dem);
+// Calculate terrain derivatives from the un-clipped DEM
+var terrain = ee.Algorithms.Terrain(demRaw);
 
-var slope = terrain.select('slope');
-var aspect = terrain.select('aspect');
-var hillshade = terrain.select('hillshade');
+// Clip terrain layers to study area
+var slope = terrain.select('slope').clip(nilgiris);
+var aspect = terrain.select('aspect').clip(nilgiris);
+var hillshade = terrain.select('hillshade').clip(nilgiris);
 
 // ------------------------------------------------------
 // Print Information
@@ -312,14 +319,17 @@ print('Distance to Stream Statistics:', distanceStats);
 // ======================================================
 
 // Stream network from MERIT Hydro
-var streamNetwork = meritHydro.select('upa').gt(10);
+var streamNetwork = meritHydro
+  .select('upa')
+  .gt(10);
 
-// Calculate stream length contribution
+// Convert stream pixels to stream length contribution
+// Non-stream pixels are explicitly set to zero.
 var streamLength = streamNetwork
-  .selfMask()
+  .unmask(0)
   .multiply(ee.Image.pixelArea().sqrt());
 
-// Calculate drainage density using a neighborhood
+// Calculate local drainage density
 var drainageDensity = streamLength
   .reduceNeighborhood({
     reducer: ee.Reducer.sum(),
@@ -328,7 +338,8 @@ var drainageDensity = streamLength
       units: 'meters'
     })
   })
-  .divide(ee.Image.constant(Math.PI).multiply(500 * 500))
+  .divide(Math.PI * 500 * 500)
+  .rename('Drainage_Density')
   .clip(nilgiris);
 
 // Display drainage density
@@ -669,4 +680,217 @@ Map.addLayer(
   },
   'ML Feature - HAND',
   false
+);
+// ======================================================
+// STEP 12: LANDSLIDE INVENTORY
+// ======================================================
+
+// Load landslide inventory
+var landslideInventory = ee.FeatureCollection(
+  "projects/practice1-capstone-project/assets/Nilgiris_Landslide_Inventory"
+);
+
+// Print inventory information
+print("Landslide Inventory:", landslideInventory);
+print("Number of Landslide Points:", landslideInventory.size());
+
+// Display landslide locations
+Map.addLayer(
+  landslideInventory,
+  {
+    color: 'red'
+  },
+  "Landslide Inventory",
+  true
+);
+
+// Center map on Nilgiris
+Map.centerObject(nilgiris, 10);
+// Inspect first landslide feature
+print("First Landslide Feature:", landslideInventory.first());
+// ======================================================
+// STEP 13: CREATE BACKGROUND / NON-LANDSLIDE SAMPLES
+// ======================================================
+
+// Create a 500 m exclusion zone around known landslides
+var landslideBuffer = landslideInventory
+  .geometry()
+  .buffer(500);
+
+// Remove the exclusion zone from the Nilgiris study area
+var backgroundArea = nilgiris.geometry()
+  .difference(landslideBuffer);
+
+// Generate background points
+// Same number as landslide samples for a balanced dataset
+var backgroundPoints = ee.FeatureCollection.randomPoints({
+  region: backgroundArea,
+  points: 344,
+  seed: 42,
+  maxError: 10
+});
+
+// Assign class = 0 to background points
+backgroundPoints = backgroundPoints.map(function(feature) {
+  return feature.set('landslide', 0);
+});
+
+// Print background information
+print(
+  'Number of Background Points:',
+  backgroundPoints.size()
+);
+
+print(
+  'First Background Point:',
+  backgroundPoints.first()
+);
+
+// Display background points
+Map.addLayer(
+  backgroundPoints,
+  {
+    color: 'yellow'
+  },
+  'Background Samples',
+  true
+);
+// ======================================================
+// STEP 14: EXTRACT ENVIRONMENTAL FACTORS
+// ======================================================
+
+// ------------------------------------------------------
+// Combine landslide and background samples
+// ------------------------------------------------------
+
+var landslideSamples = landslideInventory.map(function(feature) {
+  return feature.set('landslide', 1);
+});
+
+var allSamples = landslideSamples.merge(backgroundPoints);
+
+print('Total ML Samples:', allSamples.size());
+
+// ------------------------------------------------------
+// Create predictor feature stack
+// ------------------------------------------------------
+
+var predictorStack = ee.Image.cat([
+  dem.rename('elevation'),
+  slope.rename('slope'),
+  aspect.rename('aspect'),
+  twi.rename('TWI'),
+  hand.rename('HAND'),
+  distanceToStream.rename('distance_to_stream'),
+  drainageDensity.rename('drainage_density')
+]);
+
+print('Predictor Stack:', predictorStack);
+
+// ------------------------------------------------------
+// Extract predictor values at sample locations
+// ------------------------------------------------------
+
+var mlDataset = predictorStack.sampleRegions({
+  collection: allSamples,
+  properties: ['landslide'],
+  scale: 90,
+  geometries: true
+});
+
+// ------------------------------------------------------
+// Remove samples containing missing values
+// ------------------------------------------------------
+
+mlDataset = mlDataset.filter(
+  ee.Filter.notNull([
+    'elevation',
+    'slope',
+    'aspect',
+    'TWI',
+    'HAND',
+    'distance_to_stream',
+    'drainage_density',
+    'landslide'
+  ])
+);
+
+// ------------------------------------------------------
+// Print ML dataset information
+// ------------------------------------------------------
+
+print('ML Dataset:', mlDataset);
+print('Valid ML Samples:', mlDataset.size());
+
+print(
+  'First ML Sample:',
+  mlDataset.first()
+);
+// ======================================================
+// STEP 14A: DIAGNOSE MISSING PREDICTOR VALUES
+// ======================================================
+
+print('--- STEP 14A: Predictor Availability ---');
+
+print(
+  'Elevation samples:',
+  dem.sampleRegions({
+    collection: allSamples,
+    scale: 90,
+    geometries: false
+  }).size()
+);
+
+print(
+  'Slope samples:',
+  slope.sampleRegions({
+    collection: allSamples,
+    scale: 90,
+    geometries: false
+  }).size()
+);
+
+print(
+  'Aspect samples:',
+  aspect.sampleRegions({
+    collection: allSamples,
+    scale: 90,
+    geometries: false
+  }).size()
+);
+
+print(
+  'TWI samples:',
+  twi.sampleRegions({
+    collection: allSamples,
+    scale: 90,
+    geometries: false
+  }).size()
+);
+
+print(
+  'HAND samples:',
+  hand.sampleRegions({
+    collection: allSamples,
+    scale: 90,
+    geometries: false
+  }).size()
+);
+
+print(
+  'Distance to Stream samples:',
+  distanceToStream.sampleRegions({
+    collection: allSamples,
+    scale: 90,
+    geometries: false
+  }).size()
+);
+
+print(
+  'Drainage Density samples:',
+  drainageDensity.sampleRegions({
+    collection: allSamples,
+    scale: 90,
+    geometries: false
+  }).size()
 );
