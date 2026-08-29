@@ -56,20 +56,30 @@ GeoAI-Terrain-Intelligence-Platform
 
 # ✅ Modules Completed
 
-- ✅ Module 1 – Load Study Area
-- ✅ Module 2 – Load DEM
-- ✅ Module 3 – Terrain Analysis
-
+* ✅ Module 1 – Load Study Area
+* ✅ Module 2 – Load DEM
+* ✅ Module 3 – Terrain Analysis
+* ✅ Module 4 – Hydrology Analysis
+  * Stream Network
+  * Flow Accumulation
+  * HAND (Height Above Nearest Drainage)
+  * River Channel Width
+  * Distance to Stream
+  * Drainage Density
+  * Topographic Wetness Index (TWI)
+  * Hydrological Wetness Index
+  * Landslide inventory integration
+  * 688 ML-ready samples
 ---
 
 # 🚧 Upcoming Modules
 
-- Hydrology Analysis
-- Landform Classification
-- Terrain Feature Engineering
-- GeoAI Feature Extraction
-- Machine Learning
-- Web GIS Dashboard
+* Geology / Lithology Analysis
+* Landslide Susceptibility Machine Learning
+* Model Validation
+* Susceptibility Mapping
+* GeoAI Feature Extraction
+* Web GIS Dashboard
 
 ---
 
