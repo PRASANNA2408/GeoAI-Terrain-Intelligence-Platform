@@ -1,102 +1,122 @@
-# 🌍 GeoAI Terrain Intelligence Platform
+# GeoAI Terrain Intelligence Platform
 
-A comprehensive **GeoAI platform** built using **Google Earth Engine, Remote Sensing, GIS, and Machine Learning** for terrain analysis, hydrological modeling, and geospatial intelligence.
+## Landslide Susceptibility Modelling for the Nilgiris, Tamil Nadu, India
 
----
+A geospatial intelligence and machine learning project integrating **GIS, Remote Sensing, Google Earth Engine, terrain analysis, hydrological modelling, and Random Forest machine learning** to assess spatial landslide susceptibility across the Nilgiris district of Tamil Nadu, India.
 
-## 📖 Overview
-
-The GeoAI Terrain Intelligence Platform is an end-to-end geospatial analysis project designed to demonstrate modern GIS and GeoAI workflows.
-
-The project combines Digital Elevation Model (DEM) analysis, terrain derivatives, hydrological analysis, landform classification, feature engineering, and machine learning to support environmental monitoring and decision-making.
+The platform processes terrain and hydrological characteristics, combines them with a field-validated landslide inventory, trains a machine learning model, and produces both a continuous landslide probability surface and a five-class landslide susceptibility map.
 
 ---
 
-## 🎯 Objectives
+## 1. Project Overview
 
-- Analyze terrain using DEM data
-- Generate slope, aspect, and hillshade maps
-- Perform hydrological analysis
-- Extract terrain features
-- Build datasets for GeoAI and Machine Learning
-- Develop an interactive geospatial application
+Landslides are complex spatial phenomena influenced by terrain characteristics, topography, hydrological conditions, and other environmental factors.
 
----
+This project demonstrates an end-to-end **GeoAI workflow for landslide susceptibility modelling**, using the Nilgiris district as the study area.
 
-## 🛠 Technologies
+The workflow combines:
 
-- Google Earth Engine
-- JavaScript
+- Geographic Information Systems (GIS)
 - Remote Sensing
-- GIS
-- Python *(later modules)*
-- Machine Learning *(later modules)*
+- Digital Elevation Models (DEM)
+- Terrain analysis
+- Hydrological analysis
+- Spatial sampling
+- Machine Learning
+- Google Earth Engine
+- Random Forest classification
+- Spatial statistics
+- Git and GitHub
+
+The final system generates a spatial susceptibility surface that categorises the landscape into five relative susceptibility levels:
+
+**Very Low → Low → Moderate → High → Very High**
 
 ---
 
-# 📂 Project Structure
+# 2. Project Objectives
 
-```
-GeoAI-Terrain-Intelligence-Platform
-│
-├── scripts
-│   ├── 01_Load_Study_Area
-│   ├── 02_Load_DEM
-│   ├── 03_Terrain_Analysis
-│   └── ...
-│
-├── docs
-│
-├── assets
-│
-└── README.md
-```
+The primary objectives of this project are to:
 
----
-
-# ✅ Modules Completed
-
-* ✅ Module 1 – Load Study Area
-* ✅ Module 2 – Load DEM
-* ✅ Module 3 – Terrain Analysis
-* ✅ Module 4 – Hydrology Analysis
-  * Stream Network
-  * Flow Accumulation
-  * HAND (Height Above Nearest Drainage)
-  * River Channel Width
-  * Distance to Stream
-  * Drainage Density
-  * Topographic Wetness Index (TWI)
-  * Hydrological Wetness Index
-  * Landslide inventory integration
-  * 688 ML-ready samples
----
-
-# 🚧 Upcoming Modules
-
-* Geology / Lithology Analysis
-* Landslide Susceptibility Machine Learning
-* Model Validation
-* Susceptibility Mapping
-* GeoAI Feature Extraction
-* Web GIS Dashboard
+- Define and prepare the Nilgiris study area.
+- Prepare a Digital Elevation Model for terrain analysis.
+- Derive terrain characteristics such as elevation, slope, and aspect.
+- Perform hydrological and wetness-related analysis.
+- Prepare a field-validated landslide inventory.
+- Generate representative background samples.
+- Construct a machine learning dataset.
+- Train a Random Forest landslide susceptibility model.
+- Evaluate the model using independent validation samples.
+- Determine the relative contribution of predictor variables.
+- Generate a continuous landslide probability surface.
+- Convert continuous probability into five susceptibility classes.
+- Calculate area and percentage statistics for each susceptibility class.
+- Produce final GIS-ready outputs for interpretation and reporting.
 
 ---
 
-# 📷 Results
+# 3. Study Area
 
-Screenshots will be added as each module is completed.
+### Nilgiris District, Tamil Nadu, India
+
+The Nilgiris district is a mountainous region in Tamil Nadu characterised by substantial variation in elevation and terrain conditions.
+
+Its mountainous landscape provides an appropriate environment for demonstrating spatial landslide susceptibility modelling using terrain and hydrological variables.
+
+The study area boundary was prepared using the **FAO GAUL Level 2 administrative boundary dataset**.
+
+### Study Area
+
+- **Location:** Nilgiris District, Tamil Nadu, India
+- **Final study area:** approximately **2,561.55 km²**
+- **Final classified valid area:** approximately **2,551.44 km²**
+
+The small difference between the derived study-area extent and classified valid raster area is associated with raster masking and valid-pixel coverage.
 
 ---
 
-# 👨‍💻 Author
+# 4. Overall Methodology
 
-**Prasanna Venkataramanan**
+The project follows a modular geospatial machine learning workflow:
 
-GIS | Remote Sensing | GeoAI | Data Science
-
----
-
-# ⭐ Project Status
-
-🚀 Active Development
+```text
+                    STUDY AREA
+                        │
+                        ▼
+                DEM PREPARATION
+                        │
+                        ▼
+                TERRAIN ANALYSIS
+                        │
+                        ▼
+              HYDROLOGICAL ANALYSIS
+                        │
+                        ▼
+              PREDICTOR PREPARATION
+                        │
+                        ▼
+              LANDSLIDE INVENTORY
+                        │
+                        ▼
+            BACKGROUND SAMPLE GENERATION
+                        │
+                        ▼
+                ML DATASET CREATION
+                        │
+                        ▼
+              RANDOM FOREST MODEL
+                        │
+                        ▼
+                 MODEL VALIDATION
+                        │
+                        ▼
+           CONTINUOUS LANDSLIDE PROBABILITY
+                        │
+                        ▼
+             FIVE-CLASS SUSCEPTIBILITY
+                        │
+                        ▼
+             AREA & PERCENTAGE ANALYSIS
+                        │
+                        ▼
+                  FINAL OUTPUTS
