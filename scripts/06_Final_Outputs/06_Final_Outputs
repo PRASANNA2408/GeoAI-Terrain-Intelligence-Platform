@@ -1,0 +1,578 @@
+// ============================================================
+// NILGIRIS LANDSLIDE SUSCEPTIBILITY PROJECT
+// 06_FINAL_OUTPUTS
+// ============================================================
+
+// ------------------------------------------------------------
+// STEP 26: LOAD FINAL ML OUTPUTS
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 26: LOADING FINAL ML OUTPUTS');
+print('==============================================');
+
+// ------------------------------------------------------------
+// FINAL CONTINUOUS LANDSLIDE PROBABILITY
+// ------------------------------------------------------------
+
+var landslideProbability = ee.Image(
+  'projects/practice1-capstone-project/assets/Nilgiris_Landslide_Probability'
+);
+
+// ------------------------------------------------------------
+// FINAL FIVE-CLASS SUSCEPTIBILITY
+// ------------------------------------------------------------
+
+var susceptibilityClass = ee.Image(
+  'projects/practice1-capstone-project/assets/Nilgiris_Landslide_Susceptibility_5Class'
+);
+
+// ------------------------------------------------------------
+// STUDY AREA
+// Use the geometry of the exported ML image
+// ------------------------------------------------------------
+
+var studyArea = landslideProbability.geometry();
+
+// ------------------------------------------------------------
+// CHECK LOADED DATA
+// ------------------------------------------------------------
+
+print('Landslide Probability:', landslideProbability);
+print('5-Class Susceptibility:', susceptibilityClass);
+print('Study Area Geometry:', studyArea);
+
+// ------------------------------------------------------------
+// MAP CENTER
+// ------------------------------------------------------------
+
+Map.centerObject(studyArea, 10);
+
+// ------------------------------------------------------------
+// STUDY AREA BOUNDARY
+// ------------------------------------------------------------
+
+Map.addLayer(
+  studyArea,
+  {
+    color: '000000'
+  },
+  'Nilgiris Study Area'
+);
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 26 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 27: FINAL LANDSLIDE PROBABILITY MAP
+// ============================================================
+
+print('==============================================');
+print('STEP 27: FINAL LANDSLIDE PROBABILITY MAP');
+print('==============================================');
+
+// ------------------------------------------------------------
+// PROBABILITY VISUALIZATION
+// ------------------------------------------------------------
+
+var probabilityVis = {
+  min: 0,
+  max: 1,
+  palette: [
+    '006400',   // Very Low
+    '7FFF00',   // Low
+    'FFFF00',   // Moderate
+    'FFA500',   // High
+    'FF0000',   // Very High
+    '8B0000'    // Extreme
+  ]
+};
+
+// ------------------------------------------------------------
+// DISPLAY PROBABILITY MAP
+// ------------------------------------------------------------
+
+Map.addLayer(
+  landslideProbability,
+  probabilityVis,
+  'Final Landslide Probability'
+);
+
+// ------------------------------------------------------------
+// PROBABILITY STATISTICS
+// ------------------------------------------------------------
+
+var probabilityStats = landslideProbability.reduceRegion({
+  reducer: ee.Reducer.minMax()
+    .combine({
+      reducer2: ee.Reducer.mean(),
+      sharedInputs: true
+    })
+    .combine({
+      reducer2: ee.Reducer.stdDev(),
+      sharedInputs: true
+    }),
+  geometry: studyArea,
+  scale: 30,
+  maxPixels: 1e13
+});
+
+print('Final Probability Statistics:', probabilityStats);
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 27 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 28: FINAL STUDY AREA BOUNDARY
+// ============================================================
+
+print('==============================================');
+print('STEP 28: FINAL STUDY AREA BOUNDARY');
+print('==============================================');
+
+// ------------------------------------------------------------
+// CREATE INTEGER VALID-DATA MASK
+// ------------------------------------------------------------
+
+var validMask = landslideProbability
+  .mask()
+  .reduce(ee.Reducer.min())
+  .gt(0)
+  .selfMask()
+  .toByte();
+
+// ------------------------------------------------------------
+// CONVERT VALID AREA TO POLYGONS
+// ------------------------------------------------------------
+
+var boundaryVectors = validMask.reduceToVectors({
+  geometry: landslideProbability.geometry(),
+  scale: 30,
+  geometryType: 'polygon',
+  eightConnected: false,
+  labelProperty: 'valid',
+  maxPixels: 1e13
+});
+
+// ------------------------------------------------------------
+// MERGE ALL VALID POLYGONS
+// ------------------------------------------------------------
+
+var finalStudyArea = boundaryVectors.geometry();
+
+// ------------------------------------------------------------
+// RESET MAP LAYERS
+// ------------------------------------------------------------
+
+Map.layers().reset();
+
+// ------------------------------------------------------------
+// FINAL PROBABILITY MAP
+// ------------------------------------------------------------
+
+Map.addLayer(
+  landslideProbability,
+  probabilityVis,
+  'Final Landslide Probability'
+);
+
+// ------------------------------------------------------------
+// FINAL STUDY AREA BOUNDARY
+// ------------------------------------------------------------
+
+Map.addLayer(
+  finalStudyArea,
+  {
+    color: '000000',
+    fillColor: '00000000',
+    width: 3
+  },
+  'Final Study Area Boundary'
+);
+
+// ------------------------------------------------------------
+// CENTER MAP
+// ------------------------------------------------------------
+
+Map.centerObject(finalStudyArea, 10);
+
+// ------------------------------------------------------------
+// CALCULATE STUDY AREA
+// ------------------------------------------------------------
+
+var finalAreaKm2 = finalStudyArea
+  .area({
+    maxError: 100
+  })
+  .divide(1e6);
+
+print(
+  'Final Study Area Area (km²):',
+  finalAreaKm2
+);
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 28 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 29: FINAL 5-CLASS LANDSLIDE SUSCEPTIBILITY MAP
+// ============================================================
+
+print('==============================================');
+print('STEP 29: FINAL 5-CLASS SUSCEPTIBILITY MAP');
+print('==============================================');
+
+// ------------------------------------------------------------
+// 5-CLASS VISUALIZATION
+// ------------------------------------------------------------
+
+var susceptibilityVis = {
+  min: 1,
+  max: 5,
+  palette: [
+    '006400',   // Class 1 - Very Low
+    '7FFF00',   // Class 2 - Low
+    'FFFF00',   // Class 3 - Moderate
+    'FFA500',   // Class 4 - High
+    'FF0000'    // Class 5 - Very High
+  ]
+};
+
+// ------------------------------------------------------------
+// DISPLAY 5-CLASS MAP
+// ------------------------------------------------------------
+
+Map.addLayer(
+  susceptibilityClass,
+  susceptibilityVis,
+  'Final 5-Class Susceptibility'
+);
+
+// ------------------------------------------------------------
+// CLASS INFORMATION
+// ------------------------------------------------------------
+
+print('Class 1 = Very Low (0.00 - 0.20)');
+print('Class 2 = Low (0.20 - 0.40)');
+print('Class 3 = Moderate (0.40 - 0.60)');
+print('Class 4 = High (0.60 - 0.80)');
+print('Class 5 = Very High (0.80 - 1.00)');
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 29 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 30: SUSCEPTIBILITY CLASS AREA & PERCENTAGE
+// ============================================================
+
+print('==============================================');
+print('STEP 30: SUSCEPTIBILITY CLASS AREA ANALYSIS');
+print('==============================================');
+
+// ------------------------------------------------------------
+// CALCULATE PIXEL AREA
+// ------------------------------------------------------------
+
+var pixelArea = ee.Image.pixelArea();
+
+// ------------------------------------------------------------
+// CALCULATE AREA FOR EACH CLASS
+// ------------------------------------------------------------
+
+var classAreas = ee.List.sequence(1, 5).map(function(classValue) {
+
+  var classMask = susceptibilityClass.eq(ee.Number(classValue));
+
+  var area = pixelArea
+    .updateMask(classMask)
+    .reduceRegion({
+      reducer: ee.Reducer.sum(),
+      geometry: studyArea,
+      scale: 30,
+      maxPixels: 1e13
+    })
+    .get('area');
+
+  return ee.Feature(null, {
+    'class': classValue,
+    'area_km2': ee.Number(area).divide(1e6)
+  });
+});
+
+// ------------------------------------------------------------
+// CREATE FEATURE COLLECTION
+// ------------------------------------------------------------
+
+var classAreaFC = ee.FeatureCollection(classAreas);
+
+// ------------------------------------------------------------
+// TOTAL AREA
+// ------------------------------------------------------------
+
+var totalClassArea = classAreaFC.aggregate_sum('area_km2');
+
+// ------------------------------------------------------------
+// ADD PERCENTAGE
+// ------------------------------------------------------------
+
+var classAreaPercentage = classAreaFC.map(function(feature) {
+
+  var percentage = ee.Number(feature.get('area_km2'))
+    .divide(totalClassArea)
+    .multiply(100);
+
+  return feature.set('percentage', percentage);
+});
+
+// ------------------------------------------------------------
+// PRINT RESULTS
+// ------------------------------------------------------------
+
+print('Susceptibility Class Area & Percentage:',
+      classAreaPercentage);
+
+print('Total Classified Area (km²):',
+      totalClassArea);
+
+// ------------------------------------------------------------
+// CLASS-WISE RESULTS
+// ------------------------------------------------------------
+
+print('Class 1 - Very Low:',
+      classAreaPercentage.filter(
+        ee.Filter.eq('class', 1)));
+
+print('Class 2 - Low:',
+      classAreaPercentage.filter(
+        ee.Filter.eq('class', 2)));
+
+print('Class 3 - Moderate:',
+      classAreaPercentage.filter(
+        ee.Filter.eq('class', 3)));
+
+print('Class 4 - High:',
+      classAreaPercentage.filter(
+        ee.Filter.eq('class', 4)));
+
+print('Class 5 - Very High:',
+      classAreaPercentage.filter(
+        ee.Filter.eq('class', 5)));
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 30 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 31: SUSCEPTIBILITY AREA CHART
+// ============================================================
+
+print('==============================================');
+print('STEP 31: SUSCEPTIBILITY AREA CHART');
+print('==============================================');
+
+// ------------------------------------------------------------
+// CREATE AREA CHART
+// ------------------------------------------------------------
+
+var susceptibilityAreaChart = ui.Chart.feature.byFeature({
+  features: classAreaPercentage,
+  xProperty: 'class',
+  yProperties: ['area_km2']
+})
+.setChartType('ColumnChart')
+.setOptions({
+  title: 'Landslide Susceptibility Area by Class',
+  hAxis: {
+    title: 'Susceptibility Class',
+    ticks: [
+      {v: 1, f: 'Very Low'},
+      {v: 2, f: 'Low'},
+      {v: 3, f: 'Moderate'},
+      {v: 4, f: 'High'},
+      {v: 5, f: 'Very High'}
+    ]
+  },
+  vAxis: {
+    title: 'Area (km²)'
+  },
+  legend: {
+    position: 'none'
+  }
+});
+
+// ------------------------------------------------------------
+// PRINT CHART
+// ------------------------------------------------------------
+
+print(susceptibilityAreaChart);
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 31 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 32: SUSCEPTIBILITY PERCENTAGE CHART
+// ============================================================
+
+print('==============================================');
+print('STEP 32: SUSCEPTIBILITY PERCENTAGE CHART');
+print('==============================================');
+
+// ------------------------------------------------------------
+// CREATE PERCENTAGE CHART
+// ------------------------------------------------------------
+
+var susceptibilityPercentageChart = ui.Chart.feature.byFeature({
+  features: classAreaPercentage,
+  xProperty: 'class',
+  yProperties: ['percentage']
+})
+.setChartType('ColumnChart')
+.setOptions({
+  title: 'Landslide Susceptibility Percentage by Class',
+  hAxis: {
+    title: 'Susceptibility Class',
+    ticks: [
+      {v: 1, f: 'Very Low'},
+      {v: 2, f: 'Low'},
+      {v: 3, f: 'Moderate'},
+      {v: 4, f: 'High'},
+      {v: 5, f: 'Very High'}
+    ]
+  },
+  vAxis: {
+    title: 'Area (%)',
+    minValue: 0,
+    maxValue: 35
+  },
+  legend: {
+    position: 'none'
+  }
+});
+
+// ------------------------------------------------------------
+// PRINT CHART
+// ------------------------------------------------------------
+
+print(susceptibilityPercentageChart);
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 32 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 33: FINAL SUSCEPTIBILITY SUMMARY TABLE
+// ============================================================
+
+print('==============================================');
+print('STEP 33: FINAL SUSCEPTIBILITY SUMMARY TABLE');
+print('==============================================');
+
+// ------------------------------------------------------------
+// ADD CLASS NAMES
+// ------------------------------------------------------------
+
+var finalSummaryTable = classAreaPercentage.map(function(feature) {
+
+  var classNumber = ee.Number(feature.get('class'));
+
+  var className = ee.Algorithms.If(
+    classNumber.eq(1), 'Very Low',
+    ee.Algorithms.If(
+      classNumber.eq(2), 'Low',
+      ee.Algorithms.If(
+        classNumber.eq(3), 'Moderate',
+        ee.Algorithms.If(
+          classNumber.eq(4), 'High',
+          'Very High'
+        )
+      )
+    )
+  );
+
+  return feature.set({
+    'class_name': className
+  });
+});
+
+// ------------------------------------------------------------
+// SELECT FINAL TABLE COLUMNS
+// ------------------------------------------------------------
+
+finalSummaryTable = finalSummaryTable.select([
+  'class',
+  'class_name',
+  'area_km2',
+  'percentage'
+]);
+
+// ------------------------------------------------------------
+// PRINT TABLE
+// ------------------------------------------------------------
+
+print('FINAL SUSCEPTIBILITY SUMMARY:',
+      finalSummaryTable);
+
+// ------------------------------------------------------------
+// PRINT TOTAL AREA
+// ------------------------------------------------------------
+
+print('Total Classified Area (km²):',
+      totalClassArea);
+
+// ------------------------------------------------------------
+// COMPLETION
+// ------------------------------------------------------------
+
+print('==============================================');
+print('STEP 33 COMPLETE');
+print('==============================================');
+// ============================================================
+// STEP 34: FINAL PROJECT OUTPUT VERIFICATION
+// ============================================================
+
+print('==============================================');
+print('FINAL NILGIRIS LANDSLIDE SUSCEPTIBILITY MODEL');
+print('==============================================');
+
+print('Study Area:', finalAreaKm2, 'km²');
+print('Total Classified Area:', totalClassArea, 'km²');
+
+print('Final Outputs Available:');
+print('1. Continuous Landslide Probability Map');
+print('2. Five-Class Landslide Susceptibility Map');
+print('3. Susceptibility Class Area Statistics');
+print('4. Susceptibility Percentage Statistics');
+print('5. Susceptibility Area Chart');
+print('6. Susceptibility Percentage Chart');
+print('7. Final Study Area Boundary');
+
+print('==============================================');
+print('STEP 34 COMPLETE');
+print('PROJECT ANALYSIS COMPLETE');
+print('==============================================');
