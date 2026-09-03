@@ -130,7 +130,7 @@ The continuous probability surface was classified into five susceptibility level
 
 ### Final Landslide Susceptibility Map
 
-![Nilgiris Landslide Susceptibility Map](E:\data_science\projects\GeoAI-Terrain-Intelligence-Platform\images\final_susceptibility_map.png)
+![Nilgiris Landslide Susceptibility Map](images/final_susceptibility_map.png)
 
 ---
 
